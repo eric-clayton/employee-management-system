@@ -26,6 +26,7 @@ jobs:
 
       # 4. Build React app
       - name: Build
+        working-directory: frontend
         run: npm run build
 
       # 5. Copy build folder to EC2
