@@ -28,9 +28,6 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
-
-  const adminCount = employees.filter((e) => e.role === "Admin").length;
-  const userCount = employees.filter((e) => e.role === "User").length;
   const deptMap = employees.reduce((acc, e) => {
     const dept = e.department || "Unassigned";
     acc[dept] = (acc[dept] || 0) + 1;
