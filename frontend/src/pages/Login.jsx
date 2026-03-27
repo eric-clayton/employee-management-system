@@ -1,7 +1,7 @@
 // src/Login.jsx
 import { useState } from "react";
 import api from "../api/axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const styles = {
   page: {
@@ -155,6 +155,23 @@ export default function Login() {
         <button type="submit" style={styles.button}>
           Login
         </button>
+        {/* Register link */}
+        <div style={{ textAlign: "center", marginTop: "1rem" }}>
+          <span style={{ color: "#4c1d95", fontSize: "1rem" }}>
+            Don't have an account?{" "}
+          </span>
+          <Link
+            to="/register"
+            style={{
+              color: "#6d28d9",
+              fontWeight: 600,
+              textDecoration: "underline",
+              cursor: "pointer",
+            }}
+          >
+            Register
+          </Link>
+        </div>
       </form>
     </div>
   );
