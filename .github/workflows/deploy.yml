@@ -48,5 +48,5 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             sudo rm -rf /var/www/html/*
-            sudo mv /home/ubuntu/dist/* /var/www/html/
+            sudo mv /home/***/dist/* /var/www/html/
             sudo systemctl restart nginx
