@@ -30,17 +30,17 @@ jobs:
         run: npm run build
 
       # 5. Copy build folder to EC2
-      - name: Copy build to EC2
+      - name: Copy dist to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "frontend/build/*"
-          target: "/home/ubuntu/build"
+          source: "frontend/dist/*"
+          target: "/home/ubuntu/dist"
 
       # 6. Deploy to nginx
-      - name: Deploy on EC2
+      - name: Deploy to nginx
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -48,5 +48,5 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             sudo rm -rf /var/www/html/*
-            sudo mv /home/ubuntu/build/* /var/www/html/
+            sudo mv /home/ubuntu/dist/* /var/www/html/
             sudo systemctl restart nginx
