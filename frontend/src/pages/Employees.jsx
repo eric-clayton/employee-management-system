@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { jwtDecode } from "jwt-decode";
-import NavBar from "../components/NavBar";
+import "./Employees.css";
 
 export default function Employees() {
   const [employees, setEmployees] = useState([]);
@@ -13,6 +12,8 @@ export default function Employees() {
   const [editRow, setEditRow] = useState(null); // employee_id of row being edited
   const [editData, setEditData] = useState({}); // temp data for editing
   const [savingId, setSavingId] = useState(null);
+  const [orderBy, setOrderBy] = useState("name");
+  const [orderDir, setOrderDir] = useState("asc");
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   let role = "";
@@ -31,6 +32,7 @@ export default function Employees() {
       return;
     }
     fetchEmployees();
+    // eslint-disable-next-line
   }, []);
 
   const fetchEmployees = async () => {
@@ -90,80 +92,137 @@ export default function Employees() {
     }
   };
 
+  // Enhanced search: name, department, or role (position)
   const filtered = employees.filter((e) => {
     const q = search.toLowerCase();
     return (
       (e.name || "").toLowerCase().includes(q) ||
-      (e.email || "").toLowerCase().includes(q) ||
-      (e.department || "").toLowerCase().includes(q)
+      (e.department || "").toLowerCase().includes(q) ||
+      (e.position || "").toLowerCase().includes(q)
     );
   });
 
+  // Sorting
+  const sorted = [...filtered].sort((a, b) => {
+    let aVal = a[orderBy] ?? "";
+    let bVal = b[orderBy] ?? "";
+    if (typeof aVal === "string") aVal = aVal.toLowerCase();
+    if (typeof bVal === "string") bVal = bVal.toLowerCase();
+    if (aVal < bVal) return orderDir === "asc" ? -1 : 1;
+    if (aVal > bVal) return orderDir === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  // Helper for toggling sort
+  const handleSort = (field) => {
+    if (orderBy === field) {
+      setOrderDir(orderDir === "asc" ? "desc" : "asc");
+    } else {
+      setOrderBy(field);
+      setOrderDir("asc");
+    }
+  };
+
   return (
-    <div style={styles.page}>
-      <div style={styles.content}>
-        <div style={styles.header}>
+    <div className="employees-page">
+      <div className="employees-content">
+        <div className="employees-header">
           <div>
-            <h1 style={styles.pageTitle}>Employees</h1>
-            <p style={styles.pageSubtitle}>
+            <h1 className="employees-title">Employees</h1>
+            <p className="employees-subtitle">
               {employees.length} total employees
             </p>
           </div>
           {role === "admin" && (
-            <Link to="/employeeform" style={styles.addBtn}>
+            <Link to="/employeeform" className="employees-add-btn">
               + Add Employee
             </Link>
           )}
         </div>
 
         {/* Search */}
-        <div style={styles.searchWrapper}>
-          <span style={styles.searchIcon}>🔍</span>
+        <div className="employees-search-wrapper">
+          <span className="employees-search-icon">🔍</span>
           <input
             type="text"
-            placeholder="Search by name, email or department…"
+            placeholder="Search by name, department, or role…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={styles.searchInput}
+            className="employees-search-input"
           />
         </div>
 
         {loading ? (
-          <p style={styles.loadingText}>Loading employees…</p>
+          <p className="employees-loading-text">Loading employees…</p>
         ) : filtered.length === 0 ? (
-          <div style={styles.emptyState}>
-            <p style={styles.emptyIcon}>🔍</p>
-            <p style={styles.emptyText}>
+          <div className="employees-empty-state">
+            <p className="employees-empty-icon">🔍</p>
+            <p className="employees-empty-text">
               {search ? "No employees match your search." : "No employees yet."}
             </p>
           </div>
         ) : (
-          <div style={styles.tableWrapper}>
-            <table style={styles.table}>
+          <div className="employees-table-wrapper">
+            <table className="employees-table">
               <thead>
                 <tr>
-                  {[
-                    "#",
-                    "Name",
-                    "Email",
-                    "Role",
-                    "Department",
-                    ...(role === "admin" ? ["Actions"] : []),
-                  ].map((h) => (
-                    <th key={h} style={styles.th}>
-                      {h}
-                    </th>
-                  ))}
+                  <th className="employees-th">#</th>
+                  <th
+                    className="employees-th"
+                    onClick={() => handleSort("name")}
+                  >
+                    Name{" "}
+                    {orderBy === "name" && (orderDir === "asc" ? "▲" : "▼")}
+                  </th>
+                  <th
+                    className="employees-th"
+                    onClick={() => handleSort("email")}
+                  >
+                    Email{" "}
+                    {orderBy === "email" && (orderDir === "asc" ? "▲" : "▼")}
+                  </th>
+                  <th
+                    className="employees-th"
+                    onClick={() => handleSort("position")}
+                  >
+                    Role{" "}
+                    {orderBy === "position" && (orderDir === "asc" ? "▲" : "▼")}
+                  </th>
+                  <th
+                    className="employees-th"
+                    onClick={() => handleSort("department")}
+                  >
+                    Department{" "}
+                    {orderBy === "department" &&
+                      (orderDir === "asc" ? "▲" : "▼")}
+                  </th>
+                  <th
+                    className="employees-th"
+                    onClick={() => handleSort("salary")}
+                  >
+                    Salary{" "}
+                    {orderBy === "salary" && (orderDir === "asc" ? "▲" : "▼")}
+                  </th>
+                  <th
+                    className="employees-th"
+                    onClick={() => handleSort("status")}
+                  >
+                    Status{" "}
+                    {orderBy === "status" && (orderDir === "asc" ? "▲" : "▼")}
+                  </th>
+                  {role === "admin" && (
+                    <th className="employees-th">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((emp, idx) => {
+                {sorted.map((emp, idx) => {
                   const employee_id = emp.employee_id;
                   const isEditing = editRow === employee_id;
                   return (
                     <tr
                       key={employee_id}
-                      style={styles.tr}
+                      className="employees-tr"
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.background = "#f8fafc")
                       }
@@ -171,10 +230,10 @@ export default function Employees() {
                         (e.currentTarget.style.background = "transparent")
                       }
                     >
-                      <td style={{ ...styles.td, color: "#94a3b8" }}>
+                      <td className="employees-td" style={{ color: "#94a3b8" }}>
                         {idx + 1}
                       </td>
-                      <td style={{ ...styles.td, fontWeight: "600" }}>
+                      <td className="employees-td" style={{ fontWeight: 600 }}>
                         {isEditing ? (
                           <input
                             value={editData.name || ""}
@@ -187,7 +246,7 @@ export default function Employees() {
                           emp.name
                         )}
                       </td>
-                      <td style={styles.td}>
+                      <td className="employees-td">
                         {isEditing ? (
                           <input
                             value={editData.email || ""}
@@ -200,7 +259,7 @@ export default function Employees() {
                           emp.email
                         )}
                       </td>
-                      <td style={styles.td}>
+                      <td className="employees-td">
                         {isEditing ? (
                           <input
                             value={editData.position || ""}
@@ -213,7 +272,7 @@ export default function Employees() {
                           emp.position
                         )}
                       </td>
-                      <td style={styles.td}>
+                      <td className="employees-td">
                         {isEditing ? (
                           <input
                             value={editData.department || ""}
@@ -226,7 +285,7 @@ export default function Employees() {
                           emp.department || "—"
                         )}
                       </td>
-                      <td style={styles.td}>
+                      <td className="employees-td">
                         {isEditing ? (
                           <input
                             type="number"
@@ -240,7 +299,7 @@ export default function Employees() {
                           emp.salary
                         )}
                       </td>
-                      <td style={styles.td}>
+                      <td className="employees-td">
                         {isEditing ? (
                           <select
                             value={editData.status || "Active"}
@@ -256,14 +315,14 @@ export default function Employees() {
                         )}
                       </td>
                       {role === "admin" && (
-                        <td style={styles.td}>
-                          <div style={styles.actions}>
+                        <td className="employees-td">
+                          <div className="employees-actions">
                             {isEditing ? (
                               <>
                                 <button
                                   onClick={() => handleEditSave(employee_id)}
                                   disabled={savingId === employee_id}
-                                  style={styles.editBtn}
+                                  className="employees-edit-btn"
                                 >
                                   {savingId === employee_id
                                     ? "Saving…"
@@ -271,7 +330,7 @@ export default function Employees() {
                                 </button>
                                 <button
                                   onClick={handleEditCancel}
-                                  style={styles.deleteBtn}
+                                  className="employees-delete-btn"
                                 >
                                   Cancel
                                 </button>
@@ -280,14 +339,14 @@ export default function Employees() {
                               <>
                                 <button
                                   onClick={() => handleEdit(emp)}
-                                  style={styles.editBtn}
+                                  className="employees-edit-btn"
                                 >
                                   Edit
                                 </button>
                                 <button
                                   onClick={() => handleDelete(employee_id)}
                                   disabled={deletingId === employee_id}
-                                  style={styles.deleteBtn}
+                                  className="employees-delete-btn"
                                 >
                                   {deletingId === employee_id ? "…" : "Delete"}
                                 </button>
@@ -307,115 +366,3 @@ export default function Employees() {
     </div>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background:
-      "linear-gradient(135deg, #4c1d95 0%, #5b21b6 30%, #6d28d9 60%, #7c3aed 100%)",
-    fontFamily: "'Segoe UI', system-ui, sans-serif",
-  },
-  content: { padding: "2.5rem 2rem", maxWidth: "1100px", margin: "0 auto" },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    marginBottom: "1.5rem",
-  },
-  pageTitle: {
-    color: "#fff",
-    fontSize: "2rem",
-    fontWeight: "800",
-    margin: "0 0 0.25rem",
-    letterSpacing: "-0.03em",
-  },
-  pageSubtitle: {
-    color: "rgba(255,255,255,0.65)",
-    margin: 0,
-    fontSize: "0.95rem",
-  },
-  addBtn: {
-    background: "#fff",
-    color: "#7c3aed",
-    padding: "0.6rem 1.25rem",
-    borderRadius: "10px",
-    fontWeight: "700",
-    textDecoration: "none",
-    fontSize: "0.9rem",
-  },
-  searchWrapper: {
-    position: "relative",
-    marginBottom: "1.25rem",
-  },
-  searchIcon: {
-    position: "absolute",
-    left: "1rem",
-    top: "50%",
-    transform: "translateY(-50%)",
-    fontSize: "1rem",
-  },
-  searchInput: {
-    width: "100%",
-    padding: "0.75rem 1rem 0.75rem 2.75rem",
-    borderRadius: "10px",
-    border: "none",
-    fontSize: "0.95rem",
-    background: "rgba(255,255,255,0.15)",
-    color: "#fff",
-    outline: "none",
-    backdropFilter: "blur(8px)",
-    boxSizing: "border-box",
-  },
-  loadingText: { color: "rgba(255,255,255,0.7)", textAlign: "center" },
-  emptyState: { textAlign: "center", paddingTop: "3rem" },
-  emptyIcon: { fontSize: "3rem", margin: "0 0 0.5rem" },
-  emptyText: { color: "rgba(255,255,255,0.7)", fontSize: "1rem" },
-  tableWrapper: {
-    background: "rgba(255,255,255,0.97)",
-    borderRadius: "14px",
-    overflow: "hidden",
-    boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
-  },
-  table: { width: "100%", borderCollapse: "collapse" },
-  th: {
-    textAlign: "left",
-    padding: "0.85rem 1rem",
-    fontSize: "0.78rem",
-    color: "#64748b",
-    fontWeight: "700",
-    borderBottom: "2px solid #e2e8f0",
-    textTransform: "uppercase",
-    letterSpacing: "0.06em",
-    background: "#f8fafc",
-  },
-  tr: { borderBottom: "1px solid #f1f5f9", transition: "background 0.15s" },
-  td: { padding: "0.8rem 1rem", fontSize: "0.9rem", color: "#334155" },
-  badge: {
-    display: "inline-block",
-    padding: "0.2rem 0.65rem",
-    borderRadius: "999px",
-    fontSize: "0.78rem",
-    fontWeight: "600",
-  },
-  actions: { display: "flex", gap: "0.5rem" },
-  editBtn: {
-    display: "inline-block",
-    padding: "0.3rem 0.75rem",
-    borderRadius: "6px",
-    background: "#ede9fe",
-    color: "#7c3aed",
-    fontWeight: "600",
-    fontSize: "0.8rem",
-    textDecoration: "none",
-  },
-  deleteBtn: {
-    padding: "0.3rem 0.75rem",
-    borderRadius: "6px",
-    background: "#fee2e2",
-    color: "#dc2626",
-    border: "none",
-    fontWeight: "600",
-    fontSize: "0.8rem",
-    cursor: "pointer",
-  },
-};

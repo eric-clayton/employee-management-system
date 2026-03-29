@@ -9,6 +9,7 @@ import NoRoute from "./pages/NoRoute";
 
 import { useEffect } from "react";
 import NavBar from "./components/NavBar";
+
 function App() {
   const location = useLocation();
   const navigate = useNavigate();

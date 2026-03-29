@@ -1,4 +1,6 @@
 #Define Employee schema for data validation and serialization
+from typing import Optional
+
 from pydantic import BaseModel, EmailStr
 import datetime
 
@@ -27,12 +29,12 @@ class EmployeeCreate(BaseModel):
 
 #Schema for updating employee information
 class EmployeeUpdate(BaseModel):
-    name: str | None = None
-    email: EmailStr | None = None
-    position: str | None = None
-    department: str | None = None
-    salary: float | None = None
-    status: str | None = None
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    position: Optional[str] = None
+    department: Optional[str] = None
+    salary: Optional[float] = None
+    status: Optional[str] = None
 
 #Schema for deleting an employee
 class EmployeeDelete(BaseModel):

@@ -1,14 +1,19 @@
-/* eslint-env jest */
-// Vitest uses the same globals as Jest
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Login from "../pages/Login";
-import axios from "axios";
 import { vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
+import api from "../api/axios";
 
-// Mock axios
-vi.mock("axios");
+// Mock API (NOT axios)
+vi.mock("../api/axios", () => ({
+  default: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+  },
+}));
 
 describe("Login Page", () => {
   beforeEach(() => {
@@ -16,12 +21,13 @@ describe("Login Page", () => {
     vi.clearAllMocks();
   });
 
-  test("renders login form with username, password, and submit button", () => {
+  test("renders login form", () => {
     render(
       <MemoryRouter>
         <Login />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
+
     expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /login/i })).toBeInTheDocument();
@@ -31,43 +37,54 @@ describe("Login Page", () => {
     render(
       <MemoryRouter>
         <Login />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
-    expect(screen.getByLabelText(/password/i)).toHaveAttribute("type", "password");
+
+    expect(screen.getByLabelText(/password/i)).toHaveAttribute(
+      "type",
+      "password",
+    );
   });
 
   test("validates required fields", async () => {
+    const user = userEvent.setup();
+
     render(
       <MemoryRouter>
         <Login />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
-    const submitButton = screen.getByRole("button", { name: /login/i });
-    userEvent.click(submitButton);
+
+    await user.click(screen.getByRole("button", { name: /login/i }));
+
     expect(await screen.findAllByText(/required/i)).toHaveLength(2);
   });
 
-  test("displays error message when login fails", async () => {
-    axios.post.mockRejectedValueOnce({
+  test("shows error when login fails", async () => {
+    const user = userEvent.setup();
+
+    api.post.mockRejectedValueOnce({
       response: { data: { message: "Invalid credentials" } },
     });
 
     render(
       <MemoryRouter>
         <Login />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
-    await userEvent.type(screen.getByLabelText(/username/i), "testuser");
-    await userEvent.type(screen.getByLabelText(/password/i), "wrongpassword");
-    await userEvent.click(screen.getByRole("button", { name: /login/i }));
+    await user.type(screen.getByLabelText(/username/i), "testuser");
+    await user.type(screen.getByLabelText(/password/i), "wrongpassword");
+    await user.click(screen.getByRole("button", { name: /login/i }));
 
     expect(await screen.findByText(/invalid credentials/i)).toBeInTheDocument();
   });
 
-  test("successful login stores JWT and role, redirects to home", async () => {
-    axios.post.mockResolvedValueOnce({
-      data: { token: "fake-jwt", role: "admin" },
+  test("successful login stores token and redirects", async () => {
+    const user = userEvent.setup();
+
+    api.post.mockResolvedValueOnce({
+      data: { access_token: "fake-jwt" },
     });
 
     render(
@@ -76,16 +93,15 @@ describe("Login Page", () => {
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<div>Home Page</div>} />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
-    await userEvent.type(screen.getByLabelText(/username/i), "admin");
-    await userEvent.type(screen.getByLabelText(/password/i), "admin123");
-    await userEvent.click(screen.getByRole("button", { name: /login/i }));
+    await user.type(screen.getByLabelText(/username/i), "admin");
+    await user.type(screen.getByLabelText(/password/i), "admin123!");
+    await user.click(screen.getByRole("button", { name: /login/i }));
 
     await waitFor(() => {
       expect(localStorage.getItem("token")).toBe("fake-jwt");
-      expect(localStorage.getItem("role")).toBe("admin");
     });
 
     expect(screen.getByText(/home page/i)).toBeInTheDocument();
