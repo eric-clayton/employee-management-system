@@ -1,2 +1,5 @@
-infrastructure/
-*.tf
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+.ssh/
+.terraform/
